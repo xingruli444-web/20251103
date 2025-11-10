@@ -63,14 +63,33 @@ function draw(){
   fill(255);
   noStroke();
   textSize(28);
-  textAlign(LEFT, TOP);
+  textAlign(CENTER, CENTER);
   if(state === "start"){
-    text("歡迎！請按「開始測驗」以抽題。", 10, 120);
+    textAlign(CENTER, CENTER);
+    text("歡迎！請按「開始測驗」以抽題。", width/2, height/2 - 50);
     drawInstructions();
   } else if(state === "quiz"){
     drawQuestion();
   } else if(state === "result"){
     drawResult();
+  }
+
+  // 當 state 為 'result' 時，持續產生對應的粒子效果
+  if (state === "result") {
+    let rate = score / quiz.length;
+    if (rate >= 0.8) { // 完美或優秀
+      if (frameCount % 2 === 0) { // 每 2 幀產生一個
+        particles.push(new Particle(random(width), -20, color(255, 215, 0, 150), 'confetti'));
+      }
+    } else if (rate >= 0.5) { // 尚可
+      if (frameCount % 10 === 0) {
+        particles.push(new Particle(random(width), height + 20, color(173, 216, 230, 100), 'bubble'));
+      }
+    } else { // 待加強
+      if (frameCount % 20 === 0) {
+        particles.push(new Particle(random(width), random(height), color(255, 255, 255, 100), 'light'));
+      }
+    }
   }
 
   // 更新與繪製粒子系統（互動效果）
@@ -83,8 +102,9 @@ function draw(){
 
 function drawInstructions(){
   textSize(16);
+  textAlign(CENTER, CENTER);
   fill(200);
-  text("說明：\n- 題庫為程式內建範例，可按匯出取得 CSV 檔（可用 Excel 開啟）。\n- 開始測驗會隨機抽 5 題，作答後顯示成績與回饋，並伴隨互動動畫。", 10, 160);
+  text("說明：\n- 題庫為程式內建範例，可按匯出取得 CSV 檔（可用 Excel 開啟）。\n- 開始測驗會隨機抽 5 題，作答後顯示成績與回饋，並伴隨互動動畫。", width/2, height/2 + 20, width - 40);
 }
 
 function startQuiz(){
@@ -106,8 +126,9 @@ function createOptionButtons(){
   optionButtons = [];
   let opts = ['A','B','C','D'];
   for(let i=0;i<4;i++){
-    let b = createButton("");
-    b.position(30,220 + i*50);
+    let btnWidth = 560;
+    let b = createButton("");    
+    b.position(width/2 - btnWidth/2, height/2 + 60 + i*50);
     b.size(560,40);
     b.style('text-align','left');
     b.style('font-size','18px');
@@ -134,10 +155,11 @@ function updateOptionButtons(){
 function drawQuestion(){
   let q = quiz[current];
   fill(255);
+  textAlign(LEFT, CENTER);
   textSize(22);
-  text("第 " + (current+1) + " / " + quiz.length + " 題", 10, 120);
+  text("第 " + (current+1) + " / " + quiz.length + " 題", width / 3, height/2 - 80);
   textSize(20);
-  text(q.q, 10, 150, 760, 100);
+  text(q.q, width / 3, height/2, width - (width / 3) - 40);
 }
 
 function selectOption(letter){
@@ -162,7 +184,7 @@ function selectOption(letter){
   }
   // 顯示簡短回饋
   let fbP = createP("回饋：" + q.fb);
-  fbP.position(width - 200, 200);
+  fbP.position(width/2 - 280, height/2 + 270);
   fbP.style('width','170px');
   fbP.style('background','#fff8');
   fbP.style('padding','6px');
@@ -179,9 +201,7 @@ function nextQuestion(){
     for(let b of optionButtons) b.remove();
     optionButtons = [];
     // 衝擊粒子：根據分數顏色
-    if(score >= 4) spawnConfetti(100, color(60,180,80));
-    else if(score >= 2) spawnConfetti(60, color(200,200,80));
-    else spawnConfetti(60, color(200,80,80));
+    spawnConfetti(80, color(255, 255, 0)); // 統一顯示慶祝的黃色彩帶
   } else {
     updateOptionButtons();
   }
@@ -189,22 +209,37 @@ function nextQuestion(){
 
 function drawResult(){
   textSize(32);
+  textAlign(CENTER, CENTER);
+
+  let rate = score / quiz.length;
+  let title = "";
+  let titleColor = color(255);
+
+  if (rate === 1) {
+    title = "太棒了，完美！";
+    titleColor = color(255, 215, 0); // 金色
+  } else if (rate >= 0.8) {
+    title = "表現出色！";
+    titleColor = color(144, 238, 144); // 亮綠色
+  } else if (rate >= 0.5) {
+    title = "不錯喔！";
+    titleColor = color(135, 206, 250); // 亮藍色
+  } else {
+    title = "別灰心，再接再厲！";
+    titleColor = color(255, 182, 193); // 淺粉色
+  }
+
+  fill(titleColor);
+  text(title, width / 2, height/2 - 100);
+
   fill(255);
-  textAlign(CENTER, TOP);
-  text("測驗結果", width/2, 120);
   textSize(48);
-  text(score + " / " + quiz.length, width/2, 180);
+  text(score + " / " + quiz.length, width/2, height/2 - 30);
 
   // 回饋用語
   textSize(20);
   let msg = feedbackMessage(score);
-  text(msg, width/2, 260);
-
-  // 顯示一段更詳細建議
-  textSize(16);
-  textAlign(LEFT);
-  text("建議：\n- 若分數偏低，建議複習題庫中的相關主題並再做一次測驗。\n- 若分數很高，可嘗試增加題庫難度或新增題目。", 10, 320);
-  textAlign(LEFT);
+  text(msg, width/2, height/2 + 50);
 }
 
 function feedbackMessage(s){
@@ -272,23 +307,43 @@ function shuffleArray(arr){
 
 /* ============== 粒子系統（互動視覺效果） ============== */
 class Particle {
-  constructor(x,y,clr){
+  constructor(x, y, clr, type = 'confetti') {
     this.pos = createVector(x,y);
-    this.vel = p5.Vector.random2D().mult(random(1,5));
-    this.acc = createVector(0,0.05);
+    this.type = type;
+    if (this.type === 'confetti') {
+      this.vel = p5.Vector.random2D().mult(random(1, 6));
+      this.acc = createVector(0, 0.1);
+    } else if (this.type === 'bubble') {
+      this.vel = createVector(random(-0.5, 0.5), random(-2, -0.5));
+      this.acc = createVector(0, 0);
+    } else if (this.type === 'light') {
+      this.vel = p5.Vector.random2D().mult(random(0.1, 0.5));
+      this.acc = createVector(0, 0);
+    }
     this.l = random(6,14);
     this.life = 255;
     this.c = clr;
   }
   update(){
     this.vel.add(this.acc);
+    if (this.type === 'bubble') {
+      this.pos.x += sin(frameCount * 0.1 + this.pos.y * 0.1) * 0.5;
+    }
     this.pos.add(this.vel);
-    this.life -= 3;
+    if (this.type === 'confetti') {
+      this.life -= 3;
+    } else {
+      this.life -= 1;
+    }
   }
   show(){
     noStroke();
     fill(red(this.c), green(this.c), blue(this.c), this.life);
-    ellipse(this.pos.x, this.pos.y, this.l);
+    if (this.type === 'confetti') {
+      rect(this.pos.x, this.pos.y, this.l, this.l / 2);
+    } else {
+      ellipse(this.pos.x, this.pos.y, this.l);
+    }
   }
   isDead(){ return this.life <= 0; }
 }
